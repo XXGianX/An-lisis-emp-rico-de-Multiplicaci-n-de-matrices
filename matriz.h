@@ -5,7 +5,12 @@
 
 typedef std::vector<std::vector<double>> Matrix;
 
-Matrix generarMatriz(int n);
+// Utilidades
+Matrix generarMatriz(int n, unsigned int seed);
+bool sonIguales(const Matrix& A, const Matrix& B, int n);
+
+// Algoritmos
 Matrix multiplicarEstandar(const Matrix& A, const Matrix& B, int n);
+Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n);
 
 #endif

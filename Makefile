@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -O2 -std=c++17
+CXXFLAGS = -O2 -std=c++17 -Wall -Wextra
 TARGET = matrix_analysis
 SOURCES = main.cpp matriz.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
