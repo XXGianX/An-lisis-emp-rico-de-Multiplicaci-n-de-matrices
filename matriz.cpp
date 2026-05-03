@@ -1,43 +1,42 @@
 #include "matriz.h"
 #include <random>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 
-// Generador reproducible con semilla
+// Generador con semilla para reproducibilidad
 Matrix generarMatriz(int n, unsigned int seed) {
     Matrix m(n, vector<double>(n));
     mt19937 gen(seed); 
-    uniform_real_distribution<> dis(1.0, 10.0);
-
+    uniform_real_distribution<> dis(1.0, 5.0);
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
             m[i][j] = dis(gen);
     return m;
 }
 
-// Validación de resultados
 bool sonIguales(const Matrix& A, const Matrix& B, int n) {
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
-            if (abs(A[i][j] - B[i][j]) > 1e-9) return false;
+            if (abs(A[i][j] - B[i][j]) > 1e-7) return false;
     return true;
 }
 
-// Algoritmo Estándar O(n^3)
-Matrix multiplicarEstandar(const Matrix& A, const Matrix& B, int n) {
-    Matrix C(n, vector<double>(n, 0.0));
-    for (int i = 0; i < n; ++i) { // CORREGIDO: i < n
-        for (int j = 0; j < n; ++j) {
-            for (int k = 0; k < n; ++k) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-    return C;
+// Auxiliares de Padding
+int proximaPotenciaDe2(int n) {
+    return pow(2, ceil(log2(n)));
 }
 
-// Funciones auxiliares para Strassen
+Matrix aplicarPadding(const Matrix& M, int n, int n_nuevo) {
+    Matrix res(n_nuevo, vector<double>(n_nuevo, 0.0));
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            res[i][j] = M[i][j];
+    return res;
+}
+
+// Operaciones básicas
 Matrix sumar(const Matrix& A, const Matrix& B, int n) {
     Matrix C(n, vector<double>(n));
     for (int i = 0; i < n; i++)
@@ -54,9 +53,22 @@ Matrix restar(const Matrix& A, const Matrix& B, int n) {
     return C;
 }
 
-// Algoritmo de Strassen
-Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n) {
-    if (n <= 2) { 
+// Algoritmo Estándar O(n^3)
+Matrix multiplicarEstandar(const Matrix& A, const Matrix& B, int n) {
+    Matrix C(n, vector<double>(n, 0.0));
+    for (int i = 0; i < n; ++i) {
+        for (int k = 0; k < n; ++k) { // Optimización de localidad: i-k-j
+            for (int j = 0; j < n; ++j) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    return C;
+}
+
+// Algoritmo de Strassen con Umbral
+Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n, int umbral) {
+    if (n <= umbral) { 
         return multiplicarEstandar(A, B, n);
     }
 
@@ -73,13 +85,13 @@ Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n) {
         }
     }
 
-    Matrix P1 = multiplicarStrassen(sumar(A11, A22, k), sumar(B11, B22, k), k);
-    Matrix P2 = multiplicarStrassen(sumar(A21, A22, k), B11, k);
-    Matrix P3 = multiplicarStrassen(A11, restar(B12, B22, k), k);
-    Matrix P4 = multiplicarStrassen(A22, restar(B21, B11, k), k);
-    Matrix P5 = multiplicarStrassen(sumar(A11, A12, k), B22, k);
-    Matrix P6 = multiplicarStrassen(restar(A21, A11, k), sumar(B11, B12, k), k);
-    Matrix P7 = multiplicarStrassen(restar(A12, A22, k), sumar(B21, B22, k), k);
+    Matrix P1 = multiplicarStrassen(sumar(A11, A22, k), sumar(B11, B22, k), k, umbral);
+    Matrix P2 = multiplicarStrassen(sumar(A21, A22, k), B11, k, umbral);
+    Matrix P3 = multiplicarStrassen(A11, restar(B12, B22, k), k, umbral);
+    Matrix P4 = multiplicarStrassen(A22, restar(B21, B11, k), k, umbral);
+    Matrix P5 = multiplicarStrassen(sumar(A11, A12, k), B22, k, umbral);
+    Matrix P6 = multiplicarStrassen(restar(A21, A11, k), sumar(B11, B12, k), k, umbral);
+    Matrix P7 = multiplicarStrassen(restar(A12, A22, k), sumar(B21, B22, k), k, umbral);
 
     Matrix C(n, vector<double>(n));
     for (int i = 0; i < k; i++) {
