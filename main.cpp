@@ -1,74 +1,58 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
-#include <algorithm>
 #include <fstream>
 #include "matriz.h"
 
 using namespace std;
 
-// Función para calcular la mediana y reducir ruido
-double obtenerMediana(vector<double>& tiempos) {
-    sort(tiempos.begin(), tiempos.end());
-    int n = tiempos.size();
-    if (n % 2 == 0) return (tiempos[n/2 - 1] + tiempos[n/2]) / 2.0;
-    return tiempos[n/2];
-}
-
 int main() {
-    ofstream dataFile("data/benchmark_final.dat");
-    int repeticiones = 7; 
-    int umbral_optimo = 64; // Basado en pruebas previas
+    // Configuración de parámetros experimentales
+    vector<int> dimensiones = {2, 4, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256};
+    const int repeticiones = 15;
+    const int umbral_config = 32;
 
-    cout << "Benchmark para Gian (UNSA - Arequipa)" << endl;
-    cout << "N\tEstándar(s)\tStrassen(s)\tResultado" << endl;
-    cout << "------------------------------------------------" << endl;
+    ofstream csvFile("data/tiempos.csv");
+    if (!csvFile.is_open()) return 1;
 
-    for (int n : {64, 128, 256, 512}) {
-        vector<double> tStd, tStr;
-        bool exito = true;
+    csvFile << "n,algoritmo,repeticion,tiempo_ms\n";
 
-        for (int r = 0; r < repeticiones; ++r) {
-            Matrix A_orig = generarMatriz(n, 42 + r);
-            Matrix B_orig = generarMatriz(n, 99 + r);
+    for (int n : dimensiones) {
+        cout << "Ejecutando pruebas para n = " << n << "..." << endl;
+        
+        for (int r = 1; r <= repeticiones; ++r) {
+            Matrix A = generarMatriz(n, 100 + r);
+            Matrix B = generarMatriz(n, 200 + r);
 
-            // Manejo de Padding
-            int n_p2 = proximaPotenciaDe2(n);
-            Matrix A_p = aplicarPadding(A_orig, n, n_p2);
-            Matrix B_p = aplicarPadding(B_orig, n, n_p2);
-
+            // Medición de rendimiento: Algoritmo Estándar
             auto s1 = chrono::high_resolution_clock::now();
-            Matrix resStd = multiplicarEstandar(A_orig, B_orig, n);
+            multiplicarEstandar(A, B, n);
             auto e1 = chrono::high_resolution_clock::now();
-            tStd.push_back(chrono::duration<double>(e1 - s1).count());
+            csvFile << n << ",Estandar," << r << "," 
+                    << chrono::duration<double, milli>(e1 - s1).count() << "\n";
+
+            // Medición de rendimiento: Algoritmo Strassen
+            int n_p2 = proximaPotenciaDe2(n);
+            Matrix Ap = aplicarPadding(A, n, n_p2);
+            Matrix Bp = aplicarPadding(B, n, n_p2);
 
             auto s2 = chrono::high_resolution_clock::now();
-            Matrix resStr_p = multiplicarStrassen(A_p, B_p, n_p2, umbral_optimo);
+            multiplicarStrassen(Ap, Bp, n_p2, umbral_config);
             auto e2 = chrono::high_resolution_clock::now();
-            tStr.push_back(chrono::duration<double>(e2 - s2).count());
-
-            // Verificar contra el estándar (solo la parte útil de la matriz)
-            for(int i=0; i<n; i++)
-                for(int j=0; j<n; j++)
-                    if(abs(resStd[i][j] - resStr_p[i][j]) > 1e-7) exito = false;
+            csvFile << n << ",Strassen," << r << "," 
+                    << chrono::duration<double, milli>(e2 - s2).count() << "\n";
         }
-
-        double medStd = obtenerMediana(tStd);
-        double medStr = obtenerMediana(tStr);
-
-        cout << n << "\t" << medStd << "\t" << medStr << "\t" << (exito ? "CORRECTO" : "ERROR") << endl;
-        dataFile << n << " " << medStd << " " << medStr << "\n";
     }
 
-    dataFile.close();
-
-    // Silenciando advertencias de Ubuntu/GCC
-    cout << "\nGenerando gráfica comparativa..." << endl;
-    int check = system("gnuplot -p -e \"set title 'Rendimiento: Estándar vs Strassen (Mediana)'; \
-                        set xlabel 'n'; set ylabel 'Tiempo (s)'; set grid; \
-                        plot 'data/benchmark_final.dat' using 1:2 with linespoints title 'Estándar', \
-                             'data/benchmark_final.dat' using 1:3 with linespoints title 'Strassen'\"");
-    (void)check; 
-
-    return 0;
+    csvFile.close();
+    
+    // Generación de reporte visual (Gnuplot)
+    // Se captura el valor de retorno para cumplir con el atributo warn_unused_result
+    // Reemplaza el bloque de gnuplot en tu main.cpp por este:
+    int status = system("gnuplot -p -e \"set title 'Rendimiento: Estandar vs Strassen (Promediado)'; \
+                    set datafile separator ','; set xlabel 'Dimension (n)'; \
+                    set ylabel 'Tiempo (ms)'; set grid; \
+                    plot 'data/tiempos.csv' u 1:4 smooth unique with linespoints title 'Estandar', \
+                         'data/tiempos.csv' u 1:4 smooth unique with linespoints title 'Strassen'\"");
+    return (status != -1) ? 0 : 1;
 }

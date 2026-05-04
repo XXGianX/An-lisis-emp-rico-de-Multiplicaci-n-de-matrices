@@ -7,17 +7,21 @@ using namespace std;
 
 typedef vector<vector<double>> Matrix;
 
+// Utilidades de generación y comparación
 Matrix generarMatriz(int n, unsigned int seed);
 bool sonIguales(const Matrix& A, const Matrix& B, int n);
 
+// Funciones para modularización (Día 4)
+void copiarSubmatriz(const Matrix& origen, Matrix& destino, int filaInicio, int colInicio, int n);
+void pegarSubmatriz(const Matrix& origen, Matrix& destino, int filaInicio, int colInicio, int n);
+
+// Manejo de dimensiones y aritmética
 int proximaPotenciaDe2(int n);
 Matrix aplicarPadding(const Matrix& M, int n, int n_nuevo);
-
-
 Matrix sumar(const Matrix& A, const Matrix& B, int n);
 Matrix restar(const Matrix& A, const Matrix& B, int n);
 
-
+// Implementación de algoritmos
 Matrix multiplicarEstandar(const Matrix& A, const Matrix& B, int n);
 Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n, int umbral);
 
