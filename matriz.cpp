@@ -63,12 +63,12 @@ Matrix restar(const Matrix& A, const Matrix& B, int n) {
     return C;
 }
 
-// Multiplicación estándar con orden i-k-j para optimizar el uso de caché
+// Multiplicación estándar 
 Matrix multiplicarEstandar(const Matrix& A, const Matrix& B, int n) {
     Matrix C(n, vector<double>(n, 0.0));
     for (int i = 0; i < n; ++i) {
-        for (int k = 0; k < n; ++k) {
-            for (int j = 0; j < n; ++j) {
+        for (int j = 0; j < n; ++j) { // Orden i-j-k
+            for (int k = 0; k < n; ++k) {
                 C[i][j] += A[i][k] * B[k][j];
             }
         }

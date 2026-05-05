@@ -11,7 +11,7 @@ typedef vector<vector<double>> Matrix;
 Matrix generarMatriz(int n, unsigned int seed);
 bool sonIguales(const Matrix& A, const Matrix& B, int n);
 
-// Funciones para modularización (Día 4)
+// Funciones para modularización 
 void copiarSubmatriz(const Matrix& origen, Matrix& destino, int filaInicio, int colInicio, int n);
 void pegarSubmatriz(const Matrix& origen, Matrix& destino, int filaInicio, int colInicio, int n);
 
