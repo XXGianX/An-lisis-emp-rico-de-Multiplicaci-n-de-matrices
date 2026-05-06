@@ -2,26 +2,21 @@
 #define MATRIZ_H
 
 #include <vector>
+#include <string>
 
-using namespace std;
+using Matrix = std::vector<std::vector<double>>;
 
-typedef vector<vector<double>> Matrix;
-
-// Utilidades de generación y comparación
 Matrix generarMatriz(int n, unsigned int seed);
-bool sonIguales(const Matrix& A, const Matrix& B, int n);
+bool   sonIguales(const Matrix& A, const Matrix& B, int n);
 
-// Funciones para modularización 
-void copiarSubmatriz(const Matrix& origen, Matrix& destino, int filaInicio, int colInicio, int n);
-void pegarSubmatriz(const Matrix& origen, Matrix& destino, int filaInicio, int colInicio, int n);
+void copiarSubmatriz(const Matrix& src, Matrix& dst, int fila, int col, int n);
+void pegarSubmatriz (const Matrix& src, Matrix& dst, int fila, int col, int n);
 
-// Manejo de dimensiones y aritmética
-int proximaPotenciaDe2(int n);
-Matrix aplicarPadding(const Matrix& M, int n, int n_nuevo);
-Matrix sumar(const Matrix& A, const Matrix& B, int n);
+int    proximaPotenciaDe2(int n);
+Matrix aplicarPadding(const Matrix& M, int n, int nNuevo);
+Matrix sumar (const Matrix& A, const Matrix& B, int n);
 Matrix restar(const Matrix& A, const Matrix& B, int n);
 
-// Implementación de algoritmos
 Matrix multiplicarEstandar(const Matrix& A, const Matrix& B, int n);
 Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n, int umbral);
 
