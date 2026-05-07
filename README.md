@@ -107,12 +107,6 @@ Esto demuestra que **N₀ no es una constante universal** — depende fuertement
 
 ---
 
-## Informe Completo
-
-El análisis detallado (diseño experimental, justificación de desviaciones, reflexión crítica y declaración de uso de IA) está disponible en el informe adjunto al repositorio.
-
----
-
 ## Autor
 
 **GianX** — Algoritmos y Complejidad
