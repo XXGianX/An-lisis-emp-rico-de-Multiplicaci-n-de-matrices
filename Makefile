@@ -1,18 +1,19 @@
-CXX = g++
+CXX      = g++
 CXXFLAGS = -O2 -std=c++17 -Wall -Wextra
-TARGET = matrix_analysis
-SOURCES = main.cpp matriz.cpp
-OBJECTS = $(SOURCES:.cpp=.o)
+TARGET   = benchmark
+SOURCES  = main.cpp matriz.cpp
 
 all: $(TARGET)
 
-$(TARGET): $(OBJECTS)
-	mkdir -p data
-	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
+$(TARGET):
+	mkdir -p data figures
+	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(TARGET)
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+run: $(TARGET)
+	./$(TARGET)
 
 clean:
-	rm -f $(TARGET) $(OBJECTS)
-	rm -rf data
+	rm -f $(TARGET)
+	rm -rf data/ figures/
+
+.PHONY: all run clean
