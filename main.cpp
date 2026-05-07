@@ -12,7 +12,7 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-struct ResultadoN {
+struct ResultadoN { // Guarda los tiempos
     int    n;
     double medianaEstandar, mediaEstandar;
     double medianaStrassen, mediaStrassen;
@@ -29,7 +29,7 @@ static double media(const vector<double>& v) {
 }
 
 static ResultadoN ejecutarBenchmark(int n, int reps, int umbral, FILE* csv) {
-    int  nPad    = proximaPotenciaDe2(n);
+    int  nPad    = proximaPotenciaDe2(n);//hacer padding si n no es potencia de 2 por el Strassen
     bool padding = (nPad != n);
 
     // Warmup: estabiliza cache y branch predictor antes de medir
@@ -45,7 +45,7 @@ static ResultadoN ejecutarBenchmark(int n, int reps, int umbral, FILE* csv) {
     tE.reserve(reps);
     tS.reserve(reps);
 
-    for (int r = 1; r <= reps; ++r) {
+    for (int r = 1; r <= reps; ++r) {// Semillas distintas
         Matrix A  = generarMatriz(n, 100 + r);
         Matrix B  = generarMatriz(n, 200 + r);
         Matrix Ap = padding ? aplicarPadding(A, n, nPad) : A;
@@ -60,7 +60,7 @@ static ResultadoN ejecutarBenchmark(int n, int reps, int umbral, FILE* csv) {
         auto e2 = chrono::high_resolution_clock::now();
 
         double tEval = chrono::duration<double, milli>(e1 - s1).count();
-        double tSval = chrono::duration<double, milli>(e2 - s2).count();
+        double tSval = chrono::duration<double, milli>(e2 - s2).count();// conversion a milisegundos
 
         tE.push_back(tEval);
         tS.push_back(tSval);
@@ -78,7 +78,7 @@ static void imprimirTabla(const vector<ResultadoN>& res, int umbral) {
 
     printf("\n  Benchmark — Estandar O(n^3) vs Strassen O(n^2.81)\n"
            "  Repeticiones: 15  |  Estadistico: mediana  |  Umbral: %d\n"
-           "  AMD Ryzen 5 5600H · Ubuntu · g++ -O2\n\n", umbral);
+           "   g++ -O2\n\n", umbral);
     printf("%s", SEP);
     printf("%6s %16s %16s %16s %16s %9s\n",
            "n", "Est.med(ms)", "Est.avg(ms)", "Str.med(ms)", "Str.avg(ms)", "Ganador");
@@ -102,7 +102,7 @@ static void escribirCSVMedianas(const vector<ResultadoN>& res, const char* path)
     fclose(f);
 }
 
-static void validarCorrectitud(int umbral) {
+static void validarCorrectitud(int umbral) { // Comprobar si Strassen y el standar dan el mismo resultado para n pequeños
     const int casos[] = {4, 8, 16, 32};
     for (int n : casos) {
         int  nPad = proximaPotenciaDe2(n);
@@ -136,13 +136,15 @@ static int detectarN0(const vector<ResultadoN>& res) {
     return -1;
 }
 
+// Llama a gnuplot directamente via popen para no tener que manejar archivos
+// de script separados. El script se arma como string y se escribe al pipe.
 static void graficar(const char* csvMedianas, const char* outDir,
                      int n0, int umbral, double totalSeg) {
     char lineal[256], loglog[256], marcaN0[512], script[8192];
 
     snprintf(lineal, sizeof(lineal), "%s/comparacion_lineal.png", outDir);
     snprintf(loglog, sizeof(loglog), "%s/comparacion_loglog.png", outDir);
-
+    // Armar la linea vertical que marca N0 en el grafico
     if (n0 != -1) {
         snprintf(marcaN0, sizeof(marcaN0),
                  "set arrow from %d,graph 0 to %d,graph 1 nohead lc rgb '#D85A30' lw 2 dt 2\n"
@@ -154,7 +156,7 @@ static void graficar(const char* csvMedianas, const char* outDir,
                  "set label 'N0 no detectado en rango evaluado' "
                  "at graph 0.04,0.93 tc rgb '#D85A30' font 'Monospace,10'\n");
     }
-
+    // Script completo de gnuplot
     snprintf(script, sizeof(script),
         "set terminal pngcairo size 1000,620 enhanced font 'Monospace,11'\n"
         "set datafile separator ','\n"
@@ -165,7 +167,7 @@ static void graficar(const char* csvMedianas, const char* outDir,
 
         "set output '%s'\n"
         "set title 'Estandar O(n^3) vs Strassen O(n^{2.81}) - escala lineal\\n"
-            "umbral=%d - AMD Ryzen 5 5600H - Ubuntu - g++ -O2 - 15 reps - %.2fs' "
+            "umbral=%d - g++ -O2 - 15 reps - %.2fs' "
             "font 'Monospace Bold,11'\n"
         "set xlabel 'Dimension n' font 'Monospace,11'\n"
         "set ylabel 'Tiempo (ms) - mediana 15 muestras' font 'Monospace,11'\n"
@@ -179,7 +181,7 @@ static void graficar(const char* csvMedianas, const char* outDir,
 
         "set output '%s'\n"
         "set title 'Estandar vs Strassen - escala log-log\\n"
-            "umbral=%d - AMD Ryzen 5 5600H - Ubuntu - g++ -O2 - 15 reps - %.2fs' "
+            "umbral=%d - g++ -O2 - 15 reps - %.2fs' "
             "font 'Monospace Bold,11'\n"
         "set xlabel 'n (escala log base 2)' font 'Monospace,11'\n"
         "set ylabel 'Tiempo ms (escala log)' font 'Monospace,11'\n"
@@ -209,7 +211,7 @@ static void graficar(const char* csvMedianas, const char* outDir,
 int main() {
     const vector<int> dimensiones = {2, 4, 8, 16, 24, 28, 32, 36, 40, 48, 56, 64, 128, 256, 512, 1024};
     const int REPS   = 15;
-    const int UMBRAL = 32;
+    const int UMBRAL = 32;// Caso base
 
     fs::create_directories("data");
     fs::create_directories("figures");
@@ -229,7 +231,7 @@ int main() {
     validarCorrectitud(UMBRAL);
     for (int n : dimensiones) {
         printf("  n = %5d  ...  ", n);
-        fflush(stdout);
+        fflush(stdout); // Para que aparezca en pantalla antes de que termine el benchmark
         ResultadoN r = ejecutarBenchmark(n, REPS, UMBRAL, csvRaw);
         resultados.push_back(r);
         printf("Est: %.4f ms  |  Str: %.4f ms\n", r.medianaEstandar, r.medianaStrassen);

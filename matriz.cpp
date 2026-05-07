@@ -3,10 +3,9 @@
 #include <cmath>
 
 using namespace std;
-
 Matrix generarMatriz(int n, unsigned int seed) {
     Matrix m(n, vector<double>(n));
-    mt19937 rng(seed);
+    mt19937 rng(seed);// mejor distribucion uniforme y mas reproducible
     uniform_real_distribution<double> dist(1.0, 5.0);
     for (auto& fila : m)
         for (auto& x : fila)
@@ -17,7 +16,7 @@ Matrix generarMatriz(int n, unsigned int seed) {
 bool sonIguales(const Matrix& A, const Matrix& B, int n) {
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
-            if (fabs(A[i][j] - B[i][j]) > 1e-6) return false;
+            if (fabs(A[i][j] - B[i][j]) > 1e-6) return false;// Tolerancia por error de redondeo
     return true;
 }
 
@@ -40,7 +39,7 @@ int proximaPotenciaDe2(int n) {
 }
 
 Matrix aplicarPadding(const Matrix& M, int n, int nNuevo) {
-    Matrix R(nNuevo, vector<double>(nNuevo, 0.0));
+    Matrix R(nNuevo, vector<double>(nNuevo, 0.0)); // Ceros no afectan la multiplicacion
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
             R[i][j] = M[i][j];
@@ -74,7 +73,7 @@ Matrix multiplicarEstandar(const Matrix& A, const Matrix& B, int n) {
 
 Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n, int umbral) {
     if (n <= umbral)
-        return multiplicarEstandar(A, B, n);
+        return multiplicarEstandar(A, B, n); // Caso base hibrido
 
     int k = n / 2;
 
@@ -87,7 +86,7 @@ Matrix multiplicarStrassen(const Matrix& A, const Matrix& B, int n, int umbral) 
     copiarSubmatriz(A, A21, k, 0, k);  copiarSubmatriz(A, A22, k, k, k);
     copiarSubmatriz(B, B11, 0, 0, k);  copiarSubmatriz(B, B12, 0, k, k);
     copiarSubmatriz(B, B21, k, 0, k);  copiarSubmatriz(B, B22, k, k, k);
-
+    // 7 productos de Strassen en vez de 8
     Matrix P1 = multiplicarStrassen(sumar(A11, A22, k),  sumar(B11, B22, k),  k, umbral);
     Matrix P2 = multiplicarStrassen(sumar(A21, A22, k),  B11,                 k, umbral);
     Matrix P3 = multiplicarStrassen(A11,                 restar(B12, B22, k), k, umbral);
