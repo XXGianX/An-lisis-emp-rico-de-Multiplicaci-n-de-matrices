@@ -2,7 +2,6 @@
 #define MATRIZ_H
 
 #include <vector>
-#include <string>
 
 using Matrix = std::vector<std::vector<double>>;
 

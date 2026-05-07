@@ -12,14 +12,12 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-// Tipos
 struct ResultadoN {
     int    n;
     double medianaEstandar, mediaEstandar;
     double medianaStrassen, mediaStrassen;
 };
 
-// Estadísticos
 static double mediana(vector<double> v) {
     sort(v.begin(), v.end());
     int n = static_cast<int>(v.size());
@@ -30,13 +28,11 @@ static double media(const vector<double>& v) {
     return accumulate(v.begin(), v.end(), 0.0) / v.size();
 }
 
-// Medición 
-
 static ResultadoN ejecutarBenchmark(int n, int reps, int umbral, FILE* csv) {
     int  nPad    = proximaPotenciaDe2(n);
     bool padding = (nPad != n);
 
-    // Warmup: descarta la primera ejecucion para estabilizar cache y branch predictor
+    // Warmup: estabiliza cache y branch predictor antes de medir
     {
         Matrix A  = generarMatriz(n, 0), B = generarMatriz(n, 1);
         Matrix Ap = padding ? aplicarPadding(A, n, nPad) : A;
@@ -76,8 +72,6 @@ static ResultadoN ejecutarBenchmark(int n, int reps, int umbral, FILE* csv) {
     return { n, mediana(tE), media(tE), mediana(tS), media(tS) };
 }
 
-// Salida 
-
 static void imprimirTabla(const vector<ResultadoN>& res, int umbral) {
     static const char SEP[] =
         "--------------------------------------------------------------------------\n";
@@ -108,18 +102,43 @@ static void escribirCSVMedianas(const vector<ResultadoN>& res, const char* path)
     fclose(f);
 }
 
+static void validarCorrectitud(int umbral) {
+    const int casos[] = {4, 8, 16, 32};
+    for (int n : casos) {
+        int  nPad = proximaPotenciaDe2(n);
+        Matrix A  = generarMatriz(n, 42);
+        Matrix B  = generarMatriz(n, 84);
+        Matrix Ap = aplicarPadding(A, n, nPad);
+        Matrix Bp = aplicarPadding(B, n, nPad);
+
+        Matrix ref = multiplicarEstandar(A, B, n);
+        Matrix res = multiplicarStrassen(Ap, Bp, nPad, umbral);
+
+        // Recortar resultado de Strassen al tamaño original antes de comparar
+        Matrix resCrop(n, std::vector<double>(n));
+        for (int i = 0; i < n; ++i)
+            for (int j = 0; j < n; ++j)
+                resCrop[i][j] = res[i][j];
+
+        if (!sonIguales(ref, resCrop, n)) {
+            fprintf(stderr, "  [ERROR] Strassen produce resultado incorrecto para n=%d\n", n);
+            exit(1);
+        }
+    }
+    printf("  Validacion de correctitud: OK (n = 4, 8, 16, 32)\n\n");
+}
+
 static int detectarN0(const vector<ResultadoN>& res) {
-    // Busca el primer n donde Strassen supera consistentemente al estandar
+    // Filtra n con tiempos sub-microsegundo donde el cronometro no tiene resolucion confiable
     for (const auto& r : res)
-        if (r.medianaStrassen < r.medianaEstandar) return r.n;
+        if (r.medianaEstandar > 0.01 && r.medianaStrassen < r.medianaEstandar)
+            return r.n;
     return -1;
 }
 
-// Gnuplot
-
 static void graficar(const char* csvMedianas, const char* outDir,
                      int n0, int umbral, double totalSeg) {
-    char lineal[256], loglog[256], marcaN0[512], script[4096];
+    char lineal[256], loglog[256], marcaN0[512], script[8192];
 
     snprintf(lineal, sizeof(lineal), "%s/comparacion_lineal.png", outDir);
     snprintf(loglog, sizeof(loglog), "%s/comparacion_loglog.png", outDir);
@@ -144,7 +163,6 @@ static void graficar(const char* csvMedianas, const char* outDir,
         "set key top left box lw 0.8 samplen 2 spacing 1.3\n"
         "set pointsize 1.1\n"
 
-        // Escala lineal
         "set output '%s'\n"
         "set title 'Estandar O(n^3) vs Strassen O(n^{2.81}) - escala lineal\\n"
             "umbral=%d - AMD Ryzen 5 5600H - Ubuntu - g++ -O2 - 15 reps - %.2fs' "
@@ -159,7 +177,6 @@ static void graficar(const char* csvMedianas, const char* outDir,
             "title 'Strassen O(n^{2.81})'\n"
         "unset arrow\nunset label\n"
 
-        // Escala log-log
         "set output '%s'\n"
         "set title 'Estandar vs Strassen - escala log-log\\n"
             "umbral=%d - AMD Ryzen 5 5600H - Ubuntu - g++ -O2 - 15 reps - %.2fs' "
@@ -209,6 +226,7 @@ int main() {
 
     auto t0Total = chrono::high_resolution_clock::now();
 
+    validarCorrectitud(UMBRAL);
     for (int n : dimensiones) {
         printf("  n = %5d  ...  ", n);
         fflush(stdout);

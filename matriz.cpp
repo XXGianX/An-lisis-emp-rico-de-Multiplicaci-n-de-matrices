@@ -34,7 +34,9 @@ void pegarSubmatriz(const Matrix& origen, Matrix& destino, int filaInicio, int c
 }
 
 int proximaPotenciaDe2(int n) {
-    return static_cast<int>(pow(2.0, ceil(log2(static_cast<double>(n)))));
+    int p = 1;
+    while (p < n) p <<= 1;
+    return p;
 }
 
 Matrix aplicarPadding(const Matrix& M, int n, int nNuevo) {
