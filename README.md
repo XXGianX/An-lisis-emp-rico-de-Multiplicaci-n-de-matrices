@@ -40,7 +40,7 @@ Experimento controlado para determinar empíricamente el valor crítico **N₀**
 ├── matriz.cpp        # implementaciones: estándar, Strassen, utilidades
 ├── matriz.h          # declaraciones
 ├── Makefile          # compilación y ejecución
-├── data/
+├── data/             # carpeta generada al ejecutar el codigo
 │   ├── tiempos.csv   # mediciones crudas (todas las repeticiones)
 │   └── medianas.csv  # resumen por n (usado por gnuplot)
 └── figures/
